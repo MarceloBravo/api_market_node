@@ -30,6 +30,7 @@ connection.pool = () => {
         password: '5cd4aaf0',
         database: 'heroku_d1e6973865f067e',
         debug: false,
+        connectTimeout: 30000
     });
 }
 /*

@@ -53,7 +53,7 @@ require('./routes/sendEmailRoutes')(app, null);
 
 //app.listen(app.get('port'))
 
-app.listen(app.get('port'), '127.0.0.1',() => {
+app.listen(app.get('port'), '0.0.0.0',() => {
 //app.listen(app.get('port'), '192.168.43.118',() => {    
     console.log('Servidor activo en el puerto ' + app.get('port'))
 })

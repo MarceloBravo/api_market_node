@@ -17,7 +17,7 @@ const morgan = require('morgan');   //
 const bodyParser = require('body-parser');  //Nevesario para atender las peticiones post
 
 
-app.set('port', process.env.PORT || 3001);
+app.set('port', process.env.PORT);
 
 //middewares
 app.use(morgan('dev')); //Utiliza morgan en modo de develop para mostrar los mensajes por consola

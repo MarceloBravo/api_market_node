@@ -14,7 +14,7 @@ module.exports = function (app, passport){
     app.post('/webpay_plus/success', (req, res) => {
         webpayModel.success(req.body, (err, data) => {
             res.writeHead(302, {
-                Location: 'http://192.168.43.118:3000/ResultadoVentaWebpay'
+                Location: 'https://market-react-node.netlify.app/ResultadoVentaWebpay'
             });
             res.end();
         })

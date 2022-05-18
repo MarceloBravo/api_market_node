@@ -30,8 +30,8 @@ connection.pool = () => {
         connectTimeout: 30000
     });
 }
-
 /*
+
 connection.pool = () => {
     return mysql.createPool({
         connectionLimit : 10,

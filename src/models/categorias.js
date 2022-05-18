@@ -8,7 +8,6 @@ let categoriasModel = {}
 categoriasModel.getPage = (pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -27,27 +26,29 @@ categoriasModel.getPage = (pag, callback) => {
         `
 
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar los datos: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar los datos: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT count(*) AS totRows FROM categorias WHERE deleted_at IS NULL`)
                 
-                return callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
+                resp = callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 categoriasModel.filter = (texto, pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -72,26 +73,29 @@ categoriasModel.filter = (texto, pag, callback) => {
         `
 
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar los registros: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar los registros: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT count(*) AS totRows FROM categorias WHERE deleted_at IS NULL AND nombre LIKE ${filtro}`)
-                return callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
+                resp = callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
             }
+            cnn.release()
+            return resp;
         })
     
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 categoriasModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -108,18 +112,21 @@ categoriasModel.getAll = (callback) => {
         `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar todas las categorías: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar todas las categorías: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, res)
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -127,7 +134,6 @@ categoriasModel.getAll = (callback) => {
 categoriasModel.getCategorias = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -144,8 +150,9 @@ categoriasModel.getCategorias = (callback) => {
         `
 
         cnn.query(qry, async (error, res)=>{
+            let response = null
             if(error){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de categoríoas: '+error.message, tipoMensaje: 'danger'})
+                response = callback({mensaje: 'Ocurrió un error al obtener el listado de categoríoas: '+error.message, tipoMensaje: 'danger'})
             }else{
                 let resp = await Promise.all(res.map(async element => {
                         let subCat = await subCategorias(cnn, element.id)
@@ -153,15 +160,17 @@ categoriasModel.getCategorias = (callback) => {
                         return element
                     })
                 );
-                return callback(null, resp)
+                response = callback(null, resp)
             }
+            cnn.release()
+            return response;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -179,7 +188,6 @@ const subCategorias = async (cnn, idCategoria) => {
 categoriasModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -196,18 +204,21 @@ categoriasModel.find = (id, callback) => {
         `
 
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el registro: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el registro: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, res[0])
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
 
     })
 }
@@ -219,7 +230,6 @@ categoriasModel.insert = (data, callback) => {
     }
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -236,23 +246,25 @@ categoriasModel.insert = (data, callback) => {
         `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al insertar el registro: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al insertar el registro: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido ingresado.' , tipoMensaje: 'success', id: res.insertId})
+                    resp = callback(null, {mensaje: 'El registro ha sido ingresado.' , tipoMensaje: 'success', id: res.insertId})
                 }else{
-                    return callback({mensaje: 'El registro no pudo ser ingresado.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'El registro no pudo ser ingresado.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
-
+        */
     })
 }
 
@@ -264,7 +276,6 @@ categoriasModel.update = (id, data, callback) => {
 
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -277,80 +288,87 @@ categoriasModel.update = (id, data, callback) => {
             `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al actualizar el registro: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al actualizar el registro: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido actualizado.' , tipoMensaje: 'success', id})
+                    resp = callback(null, {mensaje: 'El registro ha sido actualizado.' , tipoMensaje: 'success', id})
                 }else{
-                    return callback({mensaje: 'El registro no pudo ser actualizado.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'El registro no pudo ser actualizado.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 categoriasModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `UPDATE categorias SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido eliminado.' , tipoMensaje: 'success', id})
+                    resp = callback(null, {mensaje: 'El registro ha sido eliminado.' , tipoMensaje: 'success', id})
                 }else{
-                    return callback({mensaje: 'El registro no pudo ser eliminado.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'El registro no pudo ser eliminado.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 categoriasModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM categorias WHERE id = ${cnn.escape(id)}`
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido eliminado.' , tipoMensaje: 'success', id})
+                    resp = callback(null, {mensaje: 'El registro ha sido eliminado.' , tipoMensaje: 'success', id})
                 }else{
-                    return callback({mensaje: 'El registro no pudo ser eliminado.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'El registro no pudo ser eliminado.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

@@ -8,7 +8,6 @@ let OrdenesCompraModel = {}
 OrdenesCompraModel.findByOrderNum = (orderNumber, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -39,9 +38,10 @@ OrdenesCompraModel.findByOrderNum = (orderNumber, callback) => {
                 dv.deleted_at IS NULL AND 
                 vwp.buy_order = ${cnn.escape(orderNumber)}`
                 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el detalle de la orden de compra: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el detalle de la orden de compra: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let prod = await cnn.promise().query(
                     `SELECT 
@@ -62,18 +62,20 @@ OrdenesCompraModel.findByOrderNum = (orderNumber, callback) => {
                         p.deleted_at IS NULL AND 
                         vwp.buy_order = ${cnn.escape(orderNumber)}`
                 )
-                if(res.length > 0){ 
-                    res[0].productos = prod[0]
+                if(result.length > 0){ 
+                    result[0].productos = prod[0]
                 }
-                return callback(null, res[0])
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         }) 
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

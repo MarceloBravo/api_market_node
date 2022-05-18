@@ -8,7 +8,6 @@ let SeccionesHome = {}
 SeccionesHome.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -26,27 +25,29 @@ SeccionesHome.getPage = (pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}
                     `
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener las secciones: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener las secciones: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(id) totRows FROM secciones_home WHERE deleted_at IS NULL`)
-                return callback(null, {data:res, page: pag, rows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, rows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SeccionesHome.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -72,27 +73,29 @@ SeccionesHome.filter = (texto, pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}
                     `
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar las secciones: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar las secciones: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(id) totRows FROM secciones_home WHERE deleted_at IS NULL ${filtro}`)
-                return callback(null, {data:res, page: pag, rows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, rows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SeccionesHome.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -108,20 +111,23 @@ SeccionesHome.getAll = (callback) => {
                         deleted_at IS NULL
                     `
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de todas las secciones: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de todas las secciones: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                let respuesta = await obtenerProductosSeccion(cnn, res)
-                return callback(null, respuesta);
+                let respuesta = await obtenerProductosSeccion(cnn, result)
+                resp = callback(null, respuesta);
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -169,7 +175,6 @@ const obtenerProductosSeccion = async (cnn, res) => {
 SeccionesHome.get = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -183,21 +188,24 @@ SeccionesHome.get = (id, callback) => {
                     deleted_at IS NULL AND 
                     id = ${cnn.escape(id)}`
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el registro: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el registro: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let productos = await getProductosSeccion(cnn, id)
-                res[0]['productos'] = productos[0]
-                return callback(null, res[0])
+                result[0]['productos'] = productos[0]
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -244,7 +252,6 @@ const getProductosSeccion = (cnn, idSeccion) => {
 SeccionesHome.insert = async (data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -258,29 +265,32 @@ SeccionesHome.insert = async (data, callback) => {
                         CURDATE()
                     )`
                     
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
                 await cnn.promise().rollback()
-                return callback(null, {mensaje: 'Ocurrió un error al ingresar la sección: '+err.message, tipoMensaje: 'danger'})
+                resp = callback(null, {mensaje: 'Ocurrió un error al ingresar la sección: '+err.message, tipoMensaje: 'danger'})
             }else{
                 try{
-                    await eliminarProductos(cnn, res.insertId, data.productos)
-                    await actualizarProductos(cnn, res.insertId, data.productos)
-                    await insertarProductos(cnn, res.insertId, data.productos)
+                    await eliminarProductos(cnn, result.insertId, data.productos)
+                    await actualizarProductos(cnn, result.insertId, data.productos)
+                    await insertarProductos(cnn, result.insertId, data.productos)
                     await cnn.promise().commit()
-                    return callback(null, {mensaje: 'La sección a sido ingresada.', tipoMensaje: 'success', id: res.insertId})
+                    resp = callback(null, {mensaje: 'La sección a sido ingresada.', tipoMensaje: 'success', id: res.insertId})
                 }catch(err){
                     await cnn.promise().rollback()
-                    return callback(null, {mensaje: 'Ocurrió un error al ingresar los productos de la sección: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback(null, {mensaje: 'Ocurrió un error al ingresar los productos de la sección: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -288,7 +298,6 @@ SeccionesHome.insert = async (data, callback) => {
 SeccionesHome.update = async (id, data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -299,29 +308,32 @@ SeccionesHome.update = async (id, data, callback) => {
                         id = ${cnn.escape(id)}`
         
         await cnn.promise().beginTransaction();
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
                 await cnn.promise().rollback()
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar las secciones: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar las secciones: '+err.message, tipoMensaje: 'danger'})
             }else{
                 try{
                     await eliminarProductos(cnn, id, data.productos)
                     await actualizarProductos(cnn, id, data.productos)
                     await insertarProductos(cnn, id, data.productos)
                     await cnn.promise().commit()
-                    return callback({mensaje: 'Las secciones han sido actualizadas', tipoMensaje: 'success', id})
+                    resp = callback({mensaje: 'Las secciones han sido actualizadas', tipoMensaje: 'success', id})
                 }catch(err){
                     await cnn.promise().rollback()
-                    return callback({mensaje: 'Ocurrió un error al intentar actualizar los productos de las secciones: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al intentar actualizar los productos de las secciones: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -329,31 +341,33 @@ SeccionesHome.update = async (id, data, callback) => {
 SeccionesHome.softDelete = async (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `UPDATE productos_secciones_home SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
         
         await cnn.promise().beginTransaction();
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar la sección.', tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar la sección.', tipoMensaje: 'danger'})
             }else{
                 try{
                     await cnn.promise().query(`UPDATE prosuctos_secciones_home SET deleted_at WHERE seccion_id = ${cnn.escape(id)}`)
-                    return callback(null,{mensaje: 'La sección ha sido eliminada.', tipoMensaje: 'success', id})
+                    resp = callback(null,{mensaje: 'La sección ha sido eliminada.', tipoMensaje: 'success', id})
                 }catch(err){
-                    return callback({mensaje: 'Ocurrió un error al eliminar los productos de la sección.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al eliminar los productos de la sección.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -361,31 +375,33 @@ SeccionesHome.softDelete = async (id, callback) => {
 SeccionesHome.erase = async (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM productos_secciones_home WHERE id = ${cnn.escape(id)}`
 
         await cnn.promise().beginTransaction();
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al borrar la sección.', tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al borrar la sección.', tipoMensaje: 'danger'})
             }else{
                 try{
                     await cnn.promise().query(`DELETE FROM prosuctos_secciones_home WHERE seccion_id = ${cnn.escape(id)}`)
-                    return callback(null,{mensaje: 'La sección ha sido borrada.', tipoMensaje: 'success', id})
+                    resp = callback(null,{mensaje: 'La sección ha sido borrada.', tipoMensaje: 'success', id})
                 }catch(err){
-                    return callback({mensaje: 'Ocurrió un error al borrar los productos de la sección.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al borrar los productos de la sección.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
         
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -448,8 +464,6 @@ const actualizarProductos = async (cnn, idSeccion, data) => {
         }
     })
 }
-
-
 
 
 module.exports = SeccionesHome

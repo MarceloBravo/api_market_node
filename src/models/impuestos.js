@@ -8,7 +8,6 @@ let impuestosModel = {}
 impuestosModel.getPage = (pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -28,19 +27,22 @@ impuestosModel.getPage = (pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}`
 
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener los datos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
+                resp = callback({mensaje: 'Ocurrió un error al obtener los datos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
             }else{
                 let totReg = await cnn.promise().query(`SELECT COUNT(*) AS totReg FROM impuestos WHERE deleted_at IS NULL`)
-                return callback(null,{data: res, totRows: totReg[0][0].totReg, rowsPerPage: constantes.regPerPage, page: pag})
+                resp = callback(null,{data: res, totRows: totReg[0][0].totReg, rowsPerPage: constantes.regPerPage, page: pag})
             }
+            cnn.release()
+            return resp;
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -48,7 +50,6 @@ impuestosModel.getPage = (pag, callback) => {
 impuestosModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -66,18 +67,21 @@ impuestosModel.getAll = (callback) => {
                         deleted_at IS NULL`
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de todos los impuestos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de todos los impuestos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
             }else{
-                return callback(null, res)
+                resp =  callback(null, res)
             }
+            cnn.release()
+            return resp;
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -86,7 +90,6 @@ impuestosModel.getAll = (callback) => {
 impuestosModel.filter = (texto, pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -114,19 +117,22 @@ impuestosModel.filter = (texto, pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}`
 
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener los datos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
+                resp = callback({mensaje: 'Ocurrió un error al obtener los datos: '+err.sqlMessage, tipoMensaje: 'danger', id:-1})
             }else{
                 let totReg = await cnn.promise().query(`SELECT COUNT(*) AS totReg FROM impuestos WHERE deleted_at IS NULL AND ${criterio}`)
-                return callback(null,{data: res, totRows: totReg[0][0].totReg, rowsPerPage: constantes.regPerPage, page: pag})
+                resp =  callback(null,{data: res, totRows: totReg[0][0].totReg, rowsPerPage: constantes.regPerPage, page: pag})
             }
+            cnn.release()
+            return resp;
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -134,7 +140,6 @@ impuestosModel.filter = (texto, pag, callback) => {
 impuestosModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -154,18 +159,21 @@ impuestosModel.find = (id, callback) => {
             `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar los datops del registro: '+err.sqlMessage, tipoMensaje:'danger', id:-1})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar los datops del registro: '+err.sqlMessage, tipoMensaje:'danger', id:-1})
             }else{
-                return callback(res[0])
+                resp = callback(res[0])
             }
+            cnn.release()
+            return resp;
         })
-
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -177,7 +185,6 @@ impuestosModel.insert = (data, callback) => {
     }
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -208,14 +215,15 @@ impuestosModel.insert = (data, callback) => {
                     errResult = {mensaje: 'El registro no pudo ser ingresado.', tipoMensaje: 'danger', id: -1}
                 }
             }
+            cnn.release()
             return callback(errResult, successResult)
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -227,7 +235,6 @@ impuestosModel.update = (id, data, callback) => {
     }
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -251,14 +258,15 @@ impuestosModel.update = (id, data, callback) => {
                     errResult = {mensaje: 'El registro no pudo ser actualizado.', tipoMensaje: 'danger', id: -1}
                 }
             }
+            cnn.release()
             return callback(errResult, successResult)
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -266,7 +274,6 @@ impuestosModel.update = (id, data, callback) => {
 impuestosModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -284,14 +291,15 @@ impuestosModel.softDelete = (id, callback) => {
                     errResult = {mensaje: 'El registro no pudo ser eliminado.', tipoMensaje: 'danger', id: -1}
                 }
             }
+            cnn.release()
             return callback(errResult, successResult)
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -299,7 +307,6 @@ impuestosModel.softDelete = (id, callback) => {
 impuestosModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -317,14 +324,15 @@ impuestosModel.delete = (id, callback) => {
                     errResult = {mensaje: 'El registro no pudo ser eliminado.', tipoMensaje: 'danger', id: -1}
                 }
             }
+            cnn.release()
             return callback(errResult, successResult)
         })
     
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

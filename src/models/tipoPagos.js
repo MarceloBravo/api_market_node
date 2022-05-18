@@ -8,7 +8,6 @@ let TipoPagosModel = {}
 TipoPagosModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -27,28 +26,30 @@ TipoPagosModel.getPage = (pag, callback) => {
                         deleted_at IS NULL 
                     LIMIT ${desde}, ${regPerPage}`
 
-            cnn.query(qry, async (err, res) => {
+            cnn.query(qry, async (err, result) => {
+                let resp = null
                 if(err){
-                    return callback({mensaje: 'Ocurrió un error al filtrar los tipos de pago: ' + err.message, tipoMendsaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al filtrar los tipos de pago: ' + err.message, tipoMendsaje: 'danger'})
                 }else{
                     let totRows = await cnn.promise().query(`SELECT COUNT(id) as Total FROM tipos_de_pago WHERE deleted_at IS NULL`)
                     //console.log('RESPONSE', totRows)
-                    return callback(null, {data: res, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].Total, page: pag})
+                    resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].Total, page: pag})
                 }
+                cnn.release()
+                return resp
             })
 
-            cnn.release()
-
+            /*
             cnn.on('error', function(err) {      
                 return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
             })
+            */
         })
 }
 
 TipoPagosModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -77,28 +78,30 @@ TipoPagosModel.filter = (texto, pag, callback) => {
                         ${filtro}
                     LIMIT ${desde}, ${regPerPage}`
 
-            cnn.query(qry, async (err, res) => {
+            cnn.query(qry, async (err, result) => {
+                let resp = null
                 if(err){
-                    return callback({mensaje: 'Ocurrió un error al filtrar los tipos de pago: ' + err.message, tipoMendsaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al filtrar los tipos de pago: ' + err.message, tipoMendsaje: 'danger'})
                 }else{
                     let totRows = await cnn.promise().query(`SELECT COUNT(id) as Total FROM tipos_de_pago WHERE deleted_at IS NULL ${filtro}`)
                     //console.log('RESPONSE', totRows)
-                    return callback(null, {data: res, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].Total, page: pag})
+                    resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].Total, page: pag})
                 }
+                cnn.release()
+                return resp
             })
-        
-            cnn.release()
-
+            
+            /*
             cnn.on('error', function(err) {      
                 return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
             })
+            */
         })
 }
 
 TipoPagosModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -115,26 +118,28 @@ TipoPagosModel.getAll = (callback) => {
                     WHERE 
                         deleted_at IS NULL`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 TipoPagosModel.findByCode = (codigo, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -152,26 +157,28 @@ TipoPagosModel.findByCode = (codigo, callback) => {
                         deleted_at IS NULL AND 
                         codigo = ${cnn.escape(codigo)}`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 TipoPagosModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -189,19 +196,22 @@ TipoPagosModel.find = (id, callback) => {
                         deleted_at IS NULL AND 
                         id = ${cnn.escape(id)}`
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -209,7 +219,6 @@ TipoPagosModel.find = (id, callback) => {
 TipoPagosModel.insert = (data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -229,23 +238,26 @@ TipoPagosModel.insert = (data, callback) => {
                         CURDATE()
                     )`
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al actualizar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al actualizar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El tipo de pago ha sido actualizado.', tipoMendsaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'El tipo de pago ha sido actualizado.', tipoMendsaje: 'success'})
                 }else{
-                    return callback(null, {mensaje: 'No fue posible actualizar el registro.', tipoMendsaje: 'danger'})
+                    resp = callback(null, {mensaje: 'No fue posible actualizar el registro.', tipoMendsaje: 'danger'})
                 }
+                cnn.release()
+                return resp
             }
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -253,7 +265,6 @@ TipoPagosModel.insert = (data, callback) => {
 TipoPagosModel.update = (id, data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -266,23 +277,26 @@ TipoPagosModel.update = (id, data, callback) => {
                     WHERE 
                         id = ${cnn.escape(id)}`
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al actualizar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al actualizar el tipo de pago: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El tipo de pago ha sido actualizado.', tipoMendsaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'El tipo de pago ha sido actualizado.', tipoMendsaje: 'success'})
                 }else{
-                    return callback(null, {mensaje: 'No fue posible actualizar el registro.', tipoMendsaje: 'danger'})
+                    resp = callback(null, {mensaje: 'No fue posible actualizar el registro.', tipoMendsaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -290,29 +304,31 @@ TipoPagosModel.update = (id, data, callback) => {
 TipoPagosModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry =  `UPDATE tipos_de_pago SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al borrar el registro: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al borrar el registro: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido borrado.', tipoMendsaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'El registro ha sido borrado.', tipoMendsaje: 'success'})
                 }else{
-                    return callback(null, {mensaje: 'No fue posible borrar el registro.', tipoMendsaje: 'danger'})
+                    resp = callback(null, {mensaje: 'No fue posible borrar el registro.', tipoMendsaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-      
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
@@ -320,29 +336,31 @@ TipoPagosModel.softDelete = (id, callback) => {
 TipoPagosModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
         
         let qry =  `DELETE FROM tipo_de_pago WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMendsaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar el registro: ' + err.message, tipoMendsaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El registro ha sido eliminado.', tipoMendsaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'El registro ha sido eliminado.', tipoMendsaje: 'success'})
                 }else{
-                    return callback(null, {mensaje: 'No fue posible eliminar el registro.', tipoMendsaje: 'danger'})
+                    resp = callback(null, {mensaje: 'No fue posible eliminar el registro.', tipoMendsaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

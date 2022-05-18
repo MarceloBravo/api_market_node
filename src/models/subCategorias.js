@@ -8,7 +8,6 @@ let SubCategoriasModel = {}
 SubCategoriasModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -30,9 +29,10 @@ SubCategoriasModel.getPage = (pag, callback) => {
                 LIMIT ${desde},${constantes.regPerPage}
         `
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar los registros: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar los registros: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT count(sc.id) as totReg 
                                                         FROM sub_categorias sc 
@@ -42,15 +42,17 @@ SubCategoriasModel.getPage = (pag, callback) => {
                                                             c.deleted_at IS NULL`
                                                         )
                 
-                return callback(null, {data:res, page: pag, totRows: totRows[0][0].totReg, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, totRows: totRows[0][0].totReg, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -58,7 +60,6 @@ SubCategoriasModel.getPage = (pag, callback) => {
 SubCategoriasModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -88,9 +89,10 @@ SubCategoriasModel.filter = (texto, pag, callback) => {
                 LIMIT ${desde},${constantes.regPerPage}
         `
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar los registros: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar los registros: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT count(sc.id) as totReg 
                                                         FROM sub_categorias sc 
@@ -100,22 +102,23 @@ SubCategoriasModel.filter = (texto, pag, callback) => {
                                                             c.deleted_at IS NULL AND (${filtro})`
                                                         )
 
-                return callback(null, {data:res, page: pag, totRows: totRows[0][0].totReg, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, totRows: totRows[0][0].totReg, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -135,19 +138,22 @@ SubCategoriasModel.getAll = (callback) => {
                     c.deleted_at IS NULL 
         `
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar el listado de sub-categorías: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar el listado de sub-categorías: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res);
+                resp = callback(null, result);
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -155,7 +161,6 @@ SubCategoriasModel.getAll = (callback) => {
 SubCategoriasModel.getAllByCategory = (idCategoria, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -177,26 +182,27 @@ SubCategoriasModel.getAllByCategory = (idCategoria, callback) => {
                     sc.categoria_id = ${cnn.escape(idCategoria)}
         `
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar las sub-categorías por categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al solicitar las sub-categorías por categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res);
+                resp = callback(null, result);
             }
+            cnn.release()
+            return resp
         })
-
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -215,26 +221,28 @@ SubCategoriasModel.find = (id, callback) => {
                     id = ${cnn.escape(id)}
         `
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar la categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar la categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0]);
+                resp = callback(null, result[0]);
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.insert = (data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -253,30 +261,32 @@ SubCategoriasModel.insert = (data, callback) => {
                 )
         `
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al insertar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al insertar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La sub-categoría ha sido ingresada.', tipoMensaje: 'success', id: res.insertId});
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La sub-categoría ha sido ingresada.', tipoMensaje: 'success', id: result.insertId});
                 }else{
-                    return callback({mensaje: 'No fue posible insertar la sub-categoría.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible insertar la sub-categoría.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.update = (id, data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -289,30 +299,32 @@ SubCategoriasModel.update = (id, data, callback) => {
                 WHERE id = ${cnn.escape(id)}
         `
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al actualizar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al actualizar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La sub-categoría ha sido actualizada.', tipoMensaje: 'success', id});
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La sub-categoría ha sido actualizada.', tipoMensaje: 'success', id});
                 }else{
-                    return callback({mensaje: 'No fue posible actualizar la sub-categoría.', tipoMensaje: 'danger'})    
+                    resp = callback({mensaje: 'No fue posible actualizar la sub-categoría.', tipoMensaje: 'danger'})    
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -322,52 +334,57 @@ SubCategoriasModel.softDelete = (id, callback) => {
                 WHERE id = ${cnn.escape(id)}
         `
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La sub-categoría ha sido eliminada.', tipoMensaje: 'success', id});
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La sub-categoría ha sido eliminada.', tipoMensaje: 'success', id});
                 }else{
-                    return callback({mensaje: 'No fue posible eliminar la sub-categoría.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible eliminar la sub-categoría.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 SubCategoriasModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM sub_categorias WHERE id = ${cnn.escape(id)}`
         
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar la sub-categoría: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La sub-categoría ha sido eliminada.', tipoMensaje: 'success', id});
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La sub-categoría ha sido eliminada.', tipoMensaje: 'success', id});
                 }else{
-                    return callback({mensaje: 'No fue posible eliminar la sub-categoría.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible eliminar la sub-categoría.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

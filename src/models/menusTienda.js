@@ -11,7 +11,6 @@ let menusTiendaModel = {};
 menusTiendaModel.mainMenu = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -31,24 +30,27 @@ menusTiendaModel.mainMenu = (callback) => {
                 posicion
             `;
 
-            cnn.query(qry, async (err, res) => {
+            cnn.query(qry, async (err, result) => {
+                let resp = null
                 if(err){
-                    return callback({mensaje: err.message, tipoMensaje: 'danger', id: -1, errores: err})
+                    resp = callback({mensaje: err.message, tipoMensaje: 'danger', id: -1, errores: err})
                 }else{
-                    let menu = res
+                    let menu = result
                     for(var x=0; x < menu.length; x++){
                         sub = await subMenus(cnn, menu[x].id)
                         menu[x]['sub_menu'] = sub
                     }
-                    return callback(err, menu);
+                    resp = callback(err, menu);
                 }
+                cnn.release()
+                return resp
             })
-          
-            cnn.release()
 
+            /*
             cnn.on('error', function(err) {      
                 return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
             })
+            */
         })
 }
 
@@ -86,7 +88,6 @@ function subMenus(cnn, idMenuPadre){
 menusTiendaModel.getPage = (pag, callback) => {    
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -111,20 +112,23 @@ menusTiendaModel.getPage = (pag, callback) => {
             
         `;
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
             }else{
                 let totRows = await totoReg(cnn, `SELECT COUNT(*) as totRows FROM menus_tienda WHERE deleted_at IS NULL`);
-                return callback(err, {data: res, page: pag, rowsPerPage: constantes.regPerPage, totRows});
+                resp = callback(err, {data: result, page: pag, rowsPerPage: constantes.regPerPage, totRows});
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }
@@ -146,7 +150,6 @@ const totoReg = (cnn, qry) => {
 menusTiendaModel.filter = (texto, pag, callback) => {    
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -178,20 +181,23 @@ menusTiendaModel.filter = (texto, pag, callback) => {
             LIMIT ${desde}, ${constantes.regPerPage}
         `;
         
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
             }else{
                 let totRows = await totoReg(cnn, `SELECT COUNT(m.id) as totRows FROM menus_tienda m WHERE deleted_at IS NULL ${filtro}`)
-                return callback(err, {data: res, page: pag, rowsPerPage: constantes.regPerPage, totRows});
+                resp = callback(err, {data: result, page: pag, rowsPerPage: constantes.regPerPage, totRows});
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }
@@ -200,7 +206,6 @@ menusTiendaModel.filter = (texto, pag, callback) => {
 menusTiendaModel.get = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -220,19 +225,22 @@ menusTiendaModel.get = (id, callback) => {
                 id = ${cnn.escape(id)}
         `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(err, res[0]);
+                resp = callback(err, result[0]);
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }
@@ -241,7 +249,6 @@ menusTiendaModel.get = (id, callback) => {
 menusTiendaModel.getAll = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -259,19 +266,22 @@ menusTiendaModel.getAll = (callback) => {
             WHERE deleted_at IS NULL
         `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: err.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(err, res);
+                resp = callback(err, result);
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -279,7 +289,6 @@ menusTiendaModel.getAll = (callback) => {
 menusTiendaModel.insert = (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -313,21 +322,21 @@ menusTiendaModel.insert = (data, callback) => {
                 tipoMensaje = 'success';
                 id = result.insertId;
             }
+            cnn.release()
             return callback({mensaje, tipoMensaje, id});
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 menusTiendaModel.update = (id, data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -343,18 +352,22 @@ menusTiendaModel.update = (id, data, callback) => {
         `;
 
         cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
                 console.log(err);
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(err, {mensaje: 'El registro ha sidio actualizado exitosamente.', tipoMensaje: 'success', id: id})
+                resp = callback(err, {mensaje: 'El registro ha sidio actualizado exitosamente.', tipoMensaje: 'success', id: id})
             }
+            cnn.release()
+            return resp
         });
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -362,7 +375,6 @@ menusTiendaModel.update = (id, data, callback) => {
 menusTiendaModel.softDelete = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -373,19 +385,22 @@ menusTiendaModel.softDelete = (id, callback) => {
         `;
 
         cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
                 console.log(err);
-                return callback({mensaje: 'Ocurrió un error al intentar eliminar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(err, {mensaje: 'El registro ha sidio eliminado exitosamente.', tipoMensaje: 'success', id})
+                resp = callback(err, {mensaje: 'El registro ha sidio eliminado exitosamente.', tipoMensaje: 'success', id})
             }
+            cnn.release()
+            return resp
         });
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -393,7 +408,6 @@ menusTiendaModel.softDelete = (id, callback) => {
 menusTiendaModel.delete = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -402,19 +416,22 @@ menusTiendaModel.delete = (id, callback) => {
         `;
 
         cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
                 console.log(err);
-                return callback({mensaje: 'Ocurrió un error al intentar eliminar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el registro: ' + err.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(err, {mensaje: 'El registro ha sidio eliminado exitosamente.', tipoMensaje: 'success', id})
+                resp = callback(err, {mensaje: 'El registro ha sidio eliminado exitosamente.', tipoMensaje: 'success', id})
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 // ******************* FIN MANTENEDOR DE MENÚ *******************

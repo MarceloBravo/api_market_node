@@ -15,7 +15,6 @@ let pool = connection.pool()
 login.login = async (credentials, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -41,16 +40,17 @@ login.login = async (credentials, callback) => {
                 let row = result[0]
                 let access_token = null
                 let refresh_token = null
+                let resp = null
                 if(err){
-                    return callback(err, null)
+                    resp = callback(err, null)
                 }else if(row === undefined){
-                    return callback({mensaje: 'Usuario inexistente.', tipo:'danger', id:-1})
+                    resp = callback({mensaje: 'Usuario inexistente.', tipo:'danger', id:-1})
                 }else{
                     let roles = await rolesUsuario(cnn, row.id)
                     bcrypt.compare(credentials.password.toString(), row.password.toString(), async (err, res)=>{
 
                         if(err || !res){
-                            return callback(err ? err.message : {mensaje: 'Usuario y/o contraseña no válidos.',tipoMensaje:'danger', id:-1}, {access_token: null, user:null})
+                            resp = callback(err ? err.message : {mensaje: 'Usuario y/o contraseña no válidos.',tipoMensaje:'danger', id:-1}, {access_token: null, user:null})
                         }else{
                             delete row.password
                             row.remember = credentials.remember
@@ -62,20 +62,22 @@ login.login = async (credentials, callback) => {
                             }
                             try{
                                 await saveRememberToken(cnn, refresh_token, credentials.email)
-                                return callback(null,{access_token, refresh_token, user: row, roles})
+                                resp = callback(null,{access_token, refresh_token, user: row, roles})
                             }catch(error){
-                                return callback({mensaje: 'Ocurrió un error al registrar el token de refresco: ' + error.message, tipoMensaje: 'danger'})
+                                resp = callback({mensaje: 'Ocurrió un error al registrar el token de refresco: ' + error.message, tipoMensaje: 'danger'})
                             }
                         }
                     })
                 }
+                cnn.release()
+                return resp;
             })
-                
-        cnn.release()
 
+            /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -114,7 +116,6 @@ login.refreshToken = async (refreshToken, host, callback) => {
     
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -143,12 +144,13 @@ login.refreshToken = async (refreshToken, host, callback) => {
             let row = result[0]
             let access_token = null
             let refresh_token = null
+            let resp = null
             if(err){
-                console.log('login error 0',error)
-                return callback(err, null)
+                resp = callback(err, null)
+
             }else if(row === undefined){
-                console.log('login error 1',error)
-                return callback({mensaje: 'Usuario inexistente.', tipo:'danger', id:-1})
+                resp = callback({mensaje: 'Usuario inexistente.', tipo:'danger', id:-1})
+
             }else{
                 let roles = await rolesUsuario(cnn, row.id)
                 row.remember = true
@@ -156,19 +158,21 @@ login.refreshToken = async (refreshToken, host, callback) => {
                 refresh_token = jwt.sign({user: row, roles}, constantes.secretRefresh, {issuer: host, expiresIn: constants.expiresTimeRefreshToken})    //Token de refresco dura 5:30 hrs, media hora más que el token 
                 try{
                     await saveRememberToken(cnn, refresh_token, email)
-                    return callback(null,{access_token, refresh_token, user: row, roles})
+                    resp = callback(null,{access_token, refresh_token, user: row, roles})
+                    
                 }catch(error){
-                    console.log('login error 2',error)
-                    return callback({mensaje: 'Ocurrió un error al registrar el token de refresco: ' + error.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'Ocurrió un error al registrar el token de refresco: ' + error.message, tipoMensaje: 'danger'})
+
                 }
             }
+            cnn.release()
+            return resp
         })
-
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }

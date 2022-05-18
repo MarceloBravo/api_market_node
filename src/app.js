@@ -3,21 +3,15 @@ const express = require('express');
 var publicDir = require('path').join(__dirname,'/public');  //Configurando la carpeta public que contiene las imágenes
 
 const app = express();
-app.use(express.static(publicDir)); 
 app.use(cors());
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header("Access-Control-Allow-Credentials", true);
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    next();
-});
+app.use(express.static(publicDir)); 
 
 const morgan = require('morgan');   //
-const bodyParser = require('body-parser');  //Nevesario para atender las peticiones post
+const bodyParser = require('body-parser');  //Necesario para atender las peticiones post
+const { resolve } = require('path');
 
 
-app.set('port', process.env.PORT);
+app.set('port', process.env.PORT || 3001);
 
 //middewares
 app.use(morgan('dev')); //Utiliza morgan en modo de develop para mostrar los mensajes por consola
@@ -50,10 +44,12 @@ require('./routes/ordenesCompraRoutes')(app, null);
 require('./routes/dashboardRoutes')(app, null);
 require('./routes/preciosRoutes')(app, null);
 require('./routes/sendEmailRoutes')(app, null);
+require('./routes/ciudadesRoutes')(app, null);
+require('./routes/tallasRoutes')(app, null);
 
 //app.listen(app.get('port'))
 
-app.listen(app.get('port'), '0.0.0.0',() => {
-//app.listen(app.get('port'), '192.168.43.118',() => {    
+//app.listen(app.get('port'), '0.0.0.0',() => { //heroku
+app.listen(app.get('port'), '192.168.43.118',() => {    
     console.log('Servidor activo en el puerto ' + app.get('port'))
 })

@@ -65,128 +65,92 @@ const getQueryFilter = (cnn, texto) => {
 PreciosModel.get = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let desde = constants.regPerPage * pag
         let qry = select + from + ` ORDER BY nombre LIMIT ${desde}, ${constants.regPerPage}`
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows ${from}`) 
-                return callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, pag})
+                resp = callback(null, {data: result, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, page: pag})
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 PreciosModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
-        cnn.query(select + from, (err, res) => {
+        cnn.query(select + from, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 PreciosModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let desde = constants.regPerPage * pag
         let qry = select + getQueryFilter(texto) + ` LIMIT ${desde}, ${constants.regPerPage}`
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de precios: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows ${getQueryFilter(texto)}`) 
-                return callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, pag})
+                resp = callback(null, {data: result, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, page: pag})
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
-/*
-PreciosModel.findProductInfo = (idProd, callback) => {
-    if(cnn){
-        let qry = `SELECT 
-        null as id,
-        p.nombre, 
-        p.descripcion, 	
-        p.stock, 
-        p.unidad_id, 
-        u.nombre unidad, 
-        p.marca_id, 
-        m.nombre marca, 
-        p.categoria_id,
-        cat.nombre categoria,
-        p.sub_categoria_id, 
-        s_cat.nombre sub_categoria, 
-        p.precio_venta_normal,
-        CONCAT('$', ' ', FORMAT(p.precio_venta_normal,0, 'de_DE')) AS str_precio_venta_normal,     
-        0 as precio, 
-        CONCAT('$', ' ', FORMAT(pp.precio,0, 'de_DE')) AS str_precio, 
-        0 as descuento, 
-        0 as descuento_maximo,
-        null as fecha_desde,
-        null as fecha_hasta,
-        pp.created_at,
-        pp.updated_at 
-        ${from} AND 
-        p.id = ${cnn.escape(idProd)}`
-
-        cnn.query(qry, (err, res) =>{
-            if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar los datos del producto: ' + err.message, tipoMensaje: 'danger'})
-            }else{
-                return callback(null, (res.affectedRows > 0) ? res[0] : [])
-            }
-        })
-    }else{
-        return callback({mensaje: 'Conexión inactiva', tipoMensaje: 'danger'})
-    }
-}
-*/
 
 PreciosModel.save = async (data, callback) => {
     let transactionStart = false
     try{
         pool.getConnection(async (err, cnn) => {
             if (err) {
-                cnn.release();
                 return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
             } 
     
@@ -205,20 +169,23 @@ PreciosModel.save = async (data, callback) => {
             
             let qry = select + (data.texto ? getQueryFilter(data.texto) : from) + ` LIMIT ${desde}, ${constants.regPerPage}`
             
-            cnn.query(qry, async (err, res) => {
+            cnn.query(qry, async (err, result) => {
+                let resp = null
                 if(err){
-                    return callback({mensaje: 'Los precios han sido actualizados pero ocurrió un error al obtener el listado de precios actualizado: ' + err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'Los precios han sido actualizados pero ocurrió un error al obtener el listado de precios actualizado: ' + err.message, tipoMensaje: 'danger'})
                 }else{
                     let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows ${data.texto ? getQueryFilter(data.texto) : from}`)
-                    return callback(null, {data: res, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, pag: data.pag, mensaje: 'Los precios han sido actualizados exitosamente', tipoMensaje: 'success'})
+                    resp = callback(null, {data: result, totRows: totRows[0][0].totRows, rowsPerPage: constants.regPerPage, pag: data.pag, mensaje: 'Los precios han sido actualizados exitosamente', tipoMensaje: 'success'})
                 }
+                cnn.release()
+                return resp
             })
-        
-            cnn.release()
 
+            /*
             cnn.on('error', function(err) {      
                 return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
             })
+            */
         })
 
     }catch(err){
@@ -283,24 +250,27 @@ const deletePrice = async (cnn, arrIds) => {
 PreciosModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `UPDATE precios_productos SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar eliminar el precio: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el precio: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, {mensaje: 'El precio ha sido eliminado.', tipoMensaje: 'success'})
+                resp = callback(null, {mensaje: 'El precio ha sido eliminado.', tipoMensaje: 'success'})
             }
+            cnn.release()
+            return resp
         })
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -308,27 +278,28 @@ PreciosModel.softDelete = (id, callback) => {
 PreciosModel.destroy = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM precios_productos WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar borrar el precio: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar borrar el precio: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, {mensaje: 'El precio ha sido borrado.', tipoMensaje: 'success'})
+                resp = callback(null, {mensaje: 'El precio ha sido borrado.', tipoMensaje: 'success'})
             }
+            cnn.release()
+            return resp
         })
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
-
-
 
 module.exports = PreciosModel

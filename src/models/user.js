@@ -24,7 +24,6 @@ const totRows = (cnn, qry) => {
 userModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
         
@@ -50,20 +49,23 @@ userModel.getPage = (pag, callback) => {
             LIMIT ${desde}, ${regPerPage} 
         `;
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar los datos.', tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al solicitar los datos.', tipoMensaje: 'danger', id: -1});
             }else{
                 let rows = await totRows(cnn, `SELECT COUNT(*) as totRows FROM users WHERE deleted_at IS NULL`);
-                return callback(null, {data: res, totRows: rows, rowsPerPage: regPerPage, page: pag});
+                resp = callback(null, {data: result, totRows: rows, rowsPerPage: regPerPage, page: pag});
             }
+            cnn.release()
+            return resp
         });
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -71,7 +73,6 @@ userModel.getPage = (pag, callback) => {
 userModel.get = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -94,26 +95,28 @@ userModel.get = (id, callback) => {
         `
 
         cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback(err, {mensaje: 'Ocurrió un error al solicitar los datos del registro.', tipoMensaje:'danger', id: id})
+                resp = callback(err, {mensaje: 'Ocurrió un error al solicitar los datos del registro.', tipoMensaje:'danger', id: id})
             }else{
                 result[0].roles = await rolesUsuario(cnn, id);
-                return callback(err, result[0])
+                resp = callback(err, result[0])
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 userModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -132,18 +135,21 @@ userModel.getAll = (callback) => {
                     ORDER BY id`;
                     
         cnn.query(qry,(err, rows) => {
+            let resp = null
             if(err){
-                return callback(err, {mensaje: 'Ocurrió un error al solicitar los datos.', tipoMensaje:'danger', id: -1})
+                resp = callback(err, {mensaje: 'Ocurrió un error al solicitar los datos.', tipoMensaje:'danger', id: -1})
             }else{
-                return callback(null, rows);
+                resp = callback(null, rows);
             }
+            cnn.release()
+            return resp
         })
-
-        cnn.release()
         
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -151,7 +157,6 @@ userModel.getAll = (callback) => {
 userModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -161,8 +166,10 @@ userModel.filter = (texto, pag, callback) => {
                             a_paterno LIKE ${cnn.escape('%'+texto+'%')} OR 
                             a_materno LIKE ${cnn.escape('%'+texto+'%')} OR 
                             direccion LIKE ${cnn.escape('%'+texto+'%')} OR 
-                            DATE_FORMAT(created_at, "%d/%M/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
-                            DATE_FORMAT(deleted_at, "%d/%M/%Y") LIKE ${cnn.escape('%'+texto+'%')} 
+                            DATE_FORMAT(created_at, "%d/%m/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(deleted_at, "%d/%m/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(created_at, "%d-%m-%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(deleted_at, "%d-%m-%Y") LIKE ${cnn.escape('%'+texto+'%')} 
                         )`;
 
         let qry = `SELECT 
@@ -181,20 +188,23 @@ userModel.filter = (texto, pag, callback) => {
                 ORDER BY a_paterno, a_materno, name
         `;
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar los dregistros: ' + err.sqlMessage, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al filtrar los dregistros: ' + err.sqlMessage, tipoMensaje: 'danger', id: -1});
             }else{
                 let rows = await totRows(cnn, `SELECT COUNT(*) AS totRows FROM users WHERE deleted_at IS NULL ${filtro}`);
-                return callback(null, {data:res, totRows: rows, rowsPerPage: regPerPage, page: pag});
+                resp = callback(null, {data: result, totRows: rows, rowsPerPage: regPerPage, page: pag});
             }
+            cnn.release()
+            return resp
         });
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }
@@ -207,7 +217,6 @@ userModel.insert = async (data, callback) => {
     }
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -239,26 +248,27 @@ userModel.insert = async (data, callback) => {
                         ${cnn.escape(data.fono)}
                     )`;
 
+        let resp = null
         try{
             await cnn.promise().beginTransaction();
 
-            let res = await cnn.promise().query(qry);
+            let result = await cnn.promise().query(qry);
 
-            await cnn.promise().query(`INSERT INTO role_user (role_id, user_id) SELECT id, ${res[0].insertId} FROM roles WHERE id IN (${rolesId})`);
+            await cnn.promise().query(`INSERT INTO role_user (role_id, user_id) SELECT id, ${result[0].insertId} FROM roles WHERE id IN (${rolesId})`);
 
             await cnn.promise().commit();
 
-            cnn.release()
+            
 
-            return callback({mensaje: 'El usuario ha sido ingresado exitosamente.', tipoMensaje: 'success', id: -1});
+            resp = callback({mensaje: 'El usuario ha sido ingresado exitosamente.', tipoMensaje: 'success', id: -1});
 
         }catch(err){
             await cnn.promise().rollback();
 
-            cnn.release()
-
-            return callback({mensaje: 'Ocurrió un error al intentar ingrsar el usuario: ' + err.sqlMessage, tipoMensaje: 'danger', id: -1});
+            resp = callback({mensaje: 'Ocurrió un error al intentar ingrsar el usuario: ' + err.sqlMessage, tipoMensaje: 'danger', id: -1});
         }
+        cnn.release()
+        return resp
     })
 }
 
@@ -271,7 +281,6 @@ userModel.update = async (id, data, callback) => {
     }
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -310,6 +319,8 @@ userModel.update = async (id, data, callback) => {
                     FROM roles 
                     WHERE id IN (${rolesId}) AND 
                         id NOT IN (SELECT role_id FROM role_user WHERE user_id = ${id})`
+            
+        let resp = null
         
         try{
             await cnn.promise().beginTransaction()
@@ -323,18 +334,16 @@ userModel.update = async (id, data, callback) => {
             await cnn.promise().query(qryUsuarios);
 
             await cnn.promise().commit();
-            
-            cnn.release()
 
-            return callback(null, {mensaje: 'El usuario ha sido actualizado exitosamente.', tipoMensaje: 'success', id});
+            resp = callback(null, {mensaje: 'El usuario ha sido actualizado exitosamente.', tipoMensaje: 'success', id});
 
         }catch(err){
             await cnn.promise().rollback();
 
-            cnn.release()
-
-            return callback({mensaje: 'Ocurrió un error al intentar actualizar el usuario: '+err.sqlMessage, tipoMensaje: 'danger', id: -1})
+            resp = callback({mensaje: 'Ocurrió un error al intentar actualizar el usuario: '+err.sqlMessage, tipoMensaje: 'danger', id: -1})
         }
+        cnn.release()
+        return resp 
         
     })
 }
@@ -344,13 +353,13 @@ userModel.update = async (id, data, callback) => {
 userModel.delete = async (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry =  `DELETE FROM users WHERE id = ${cnn.escape(data.id)}`
         let qryDeleteRolesUsuario = `DLETE FROM role_user WHERE user_id = ${cnn.escape(id)}`;
 
+        let resp = null
         try{
             await cnn.promise().beginTransaction();
 
@@ -360,17 +369,15 @@ userModel.delete = async (data, callback) => {
 
             await cnn.promise().commit();
 
-            cnn.release()
-
-            return callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id});
+            resp = callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id});
         }catch(err){
             await cnn.promise().rollback();            
 
-            cnn.release()
-
-            return callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
+            resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
         }
         
+        cnn.release()
+        return resp
     })
 }
 
@@ -378,7 +385,6 @@ userModel.delete = async (data, callback) => {
 userModel.softDelete = async (id, callback) =>  {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
         
@@ -386,6 +392,8 @@ userModel.softDelete = async (id, callback) =>  {
         
         let qry2 = `UPDATE role_user SET deleted_at = CURDATE() WHERE user_id = ${cnn.escape(id)}`;
 
+        let resp = null
+        
         try{
             await cnn.promise().beginTransaction();
 
@@ -395,17 +403,15 @@ userModel.softDelete = async (id, callback) =>  {
 
             await cnn.promise().commit();
 
-            cnn.release()
-
-            return callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id})
+            resp = callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id})
         }catch(err){
             await cnn.promise().rollback();
 
-            cnn.release()
-
-            return callback({mensaje: 'Ha ocurrido un error al intentar eliminar el usuario: '+err.sqlMessage, tipoMensaje: 'danger', id});
+            resp = callback({mensaje: 'Ha ocurrido un error al intentar eliminar el usuario: '+err.sqlMessage, tipoMensaje: 'danger', id});
         }
 
+        cnn.release()
+        return resp
     })
 }
 

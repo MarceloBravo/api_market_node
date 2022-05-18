@@ -7,14 +7,16 @@ VentasModel = {}
 VentasModel.registrar = async (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         }
         
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
 
+        let resp = null
         let errMsg = 'iniciar la transacción'
         try{
             await cnn.promise().beginTransaction();
@@ -31,7 +33,7 @@ VentasModel.registrar = async (data, callback) => {
             }
 
             errMsg = 'registrar los datos de los productos'
-            await registrarProductos(cnn, ventaRes.insertId, data.productos)
+            await registrarProductos(cnn, ventaRes.insertId, data.productos, data.datos_webpay.status)
 
             errMsg = 'registrar los datos del despacho'
             await registrarDespacho(cnn, ventaRes.insertId, data.despacho)
@@ -42,17 +44,15 @@ VentasModel.registrar = async (data, callback) => {
             errMsg = 'finalizar la transacción'
             await cnn.promise().commit()
 
-            cnn.release()
-
-            return callback(null, {mensaje: `Tu compra ha finalizado exitosamente.`, tipoMensaje: 'success'})
+            return callback(null, {mensaje: data.datos_webpay.status !== 'FAILED' ? `Tu compra ha finalizado exitosamente.` : 'La transacción no pudo llevarse a cabo o fue rechazada', tipoMensaje: data.datos_webpay.status !== 'FAILED' ? 'success' : 'danger'})
 
         }catch(error){
             await cnn.promise().rollback()
 
-            cnn.release()
-
-            return callback({mensaje: `Ocurrió un error al ${errMsg}: ` + error.message, tipoMensaje: 'danger'})
+            resp = callback({mensaje: `Ocurrió un error al ${errMsg}: ` + error.message, tipoMensaje: 'danger'})
         }
+        cnn.release()
+        return resp
     })
 }
 
@@ -119,7 +119,7 @@ const registrarCliente = async (cnn, venta_id, data) => {
                             )`)
 }
 
-const registrarProductos = async (cnn, venta_id, data) => {
+const registrarProductos = async (cnn, venta_id, data, status) => {
     await data.map(async e => {
 
         await cnn.promise().query(`INSERT INTO detalle_ventas (
@@ -130,6 +130,7 @@ const registrarProductos = async (cnn, venta_id, data) => {
                                     JSON_impuestos,
                                     precio_venta,
                                     cantidad,
+                                    talla,
                                     total_producto,
                                     created_at,
                                     updated_at
@@ -141,12 +142,16 @@ const registrarProductos = async (cnn, venta_id, data) => {
                                     ${cnn.escape(e.JSON_impuestos)}, 
                                     ${cnn.escape(parseInt(e.precio_venta.substring(1).split('.').join('')))},
                                     ${cnn.escape(e.cantidad)},
+                                    ${cnn.escape(e.talla)},
                                     ${cnn.escape(parseInt(e.precio_venta.substring(1).split('.').join('')) * e.cantidad)},
                                     CURDATE(),
                                     CURDATE()
                                 )`)
 
-        await descontarStock(cnn, e.producto_id, e.cantidad)
+                                
+        if(status !== 'FAILED'){
+            await descontarStock(cnn, e.producto_id, e.cantidad)
+        }
     })
 }
 
@@ -233,29 +238,31 @@ const descontarStock = async (cnn, id, cantidad) => {
 VentasModel.anularVenta = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `UPDATE ventas SET fecha_anulacion = CURDATE() WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res)=>{
+        cnn.query(qry, (err, result)=>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ha ocurrido un error al intentar anular la venta: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ha ocurrido un error al intentar anular la venta: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null,{mensaje: 'La venta ha sido anulada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null,{mensaje: 'La venta ha sido anulada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'La venta no fue encontrada o no pudo se anulada.', tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'La venta no fue encontrada o no pudo se anulada.', tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

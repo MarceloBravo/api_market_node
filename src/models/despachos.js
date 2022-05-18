@@ -8,7 +8,6 @@ let DespachosModel = {}
 DespachosModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -57,21 +56,24 @@ DespachosModel.getPage = (pag, callback) => {
                     ORDER BY fecha_despacho, dv.created_at ASC  
                     LIMIT ${desde}, ${constantes.regPerPage}`
                 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar obtener el listado de despachos: ' + err.message, tipoMensaje: 'danger'})
+                reps = callback({mensaje: 'Ocurrió un error al intentar obtener el listado de despachos: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                let despachos = await detalleProductos(cnn, res)
+                let despachos = await detalleProductos(cnn, result)
                 let totRows = await cnn.promise().query(`SELECT count(*) AS totRows FROM ventas v INNER JOIN despachos_ventas dv ON v.id = dv.venta_id WHERE v.deleted_at IS NULL AND  dv.deleted_at IS NULL`)
-                return callback(null, {data: despachos, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
+                reps = callback(null, {data: despachos, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
             }
+            cnn.release()
+            return resp;
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -112,7 +114,6 @@ const detalleProductos = async (cnn, despachos) => {
 DespachosModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -138,8 +139,10 @@ DespachosModel.filter = (texto, pag, callback) => {
                             dv.referencia LIKE ${cnn.escape('%'+texto+'%')} OR 
                             dv.shipping_cod LIKE ${cnn.escape('%'+texto+'%')} OR 
                             vwp.buy_order LIKE ${cnn.escape('%'+texto+'%')} OR 
-                            DATE_FORMAT(dv.created_at, "%d/%M/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
-                            DATE_FORMAT(dv.updated_at, "%d/%M/%Y") LIKE ${cnn.escape('%'+texto+'%')}  
+                            DATE_FORMAT(dv.created_at, "%d/%m/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(dv.updated_at, "%d/%m/%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(dv.created_at, "%d-%m-%Y") LIKE ${cnn.escape('%'+texto+'%')} OR 
+                            DATE_FORMAT(dv.updated_at, "%d-%m-%Y") LIKE ${cnn.escape('%'+texto+'%')}  
                     )`
         let qry = `SELECT 
                         dv.id, 
@@ -180,15 +183,15 @@ DespachosModel.filter = (texto, pag, callback) => {
                         LEFT JOIN ventas_clientes_sin_registrar vcsr ON v.id = vcsr.venta_id 
                     WHERE
                         v.deleted_at IS NULL AND  
-                        dv.deleted_at IS NULL AND 
+                        dv.deleted_at IS NULL  
                         ${filtro}
                     ORDER BY fecha_despacho ASC 
                     LIMIT ${desde}, ${constantes.regPerPage}`
         
-
         cnn.query(qry, async (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar obtener el listado de despachos: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar obtener el listado de despachos: ' + err.message, tipoMensaje: 'danger'})
             }else{
                 let despachos = await detalleProductos(cnn, res)
                 let totRows = await cnn.promise().query(`
@@ -209,15 +212,18 @@ DespachosModel.filter = (texto, pag, callback) => {
                         WHERE 
                             v.deleted_at IS NULL AND dv.deleted_at IS NULL ${filtro}
                     `)
-                return callback(null, {data: despachos, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
+                resp = callback(null, {data: despachos, totRows: totRows[0][0].totRows, rowsPerPage: constantes.regPerPage, pag})
             }
+            cnn.release()
+            return resp
         })
     
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -225,7 +231,6 @@ DespachosModel.filter = (texto, pag, callback) => {
 DespachosModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -249,19 +254,22 @@ DespachosModel.find = (id, callback) => {
                     deleted_at IS NULL AND 
                     id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al consultar los datos del despacho: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al consultar los datos del despacho: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -269,7 +277,6 @@ DespachosModel.find = (id, callback) => {
 DespachosModel.update = (id, data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -289,29 +296,31 @@ DespachosModel.update = (id, data, callback) => {
                         id = ${cnn.escape(id)}`
         
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar el despacho: ' + err.message , tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar el despacho: ' + err.message , tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El despacho ha sido actualizado.' , tipoMensaje: 'success'})
+                    resp = callback(null, {mensaje: 'El despacho ha sido actualizado.' , tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible actualizar el despacho: ' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible actualizar el despacho: ' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 DespachosModel.cambioEstado = (id, idEstado, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -322,21 +331,25 @@ DespachosModel.cambioEstado = (id, idEstado, callback) => {
                         id = ${cnn.escape(id)}`
         
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar el estado del despacho: ' + err.message , tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar el estado del despacho: ' + err.message , tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'El estado del despacho ha sido actualizado.' , tipoMensaje: 'success'})
+                    resp = callback(null, {mensaje: 'El estado del despacho ha sido actualizado.' , tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible actualizar el estado del despacho: ' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible actualizar el estado del despacho: ' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-        cnn.release()
-
+        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

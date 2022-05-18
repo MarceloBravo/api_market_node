@@ -7,14 +7,16 @@ let permisosModel = {};
 permisosModel.get = async (idRol, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
 
+        let resp = null
         try{
             let qry = `
                     SELECT
@@ -44,24 +46,22 @@ permisosModel.get = async (idRol, callback) => {
                         roles_id,
                         pantallas_id`;
                         
-            let res = await cnn.promise().query(qry);
+            let result = await cnn.promise().query(qry);
 
-            cnn.release()
-
-            return callback(null, res[0]);
+            resp = callback(null, result[0]);
         }catch(error){
             console.log(error.message)
 
-            cnn.release()
-            return callback({mensaje: 'Ocurrió un error al buscar los permisos del rol: '+ error.message, tipoMensaje: 'danger', id: -1});
+            resp = callback({mensaje: 'Ocurrió un error al buscar los permisos del rol: '+ error.message, tipoMensaje: 'danger', id: -1});
         }
+        cnn.release()
+        return resp
     })
 }
 
 permisosModel.getPermisosPantalla = (url, arrRoles, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -81,46 +81,48 @@ permisosModel.getPermisosPantalla = (url, arrRoles, callback) => {
                 AND m.deleted_at IS NULL;
         `
 
-        cnn.query(qry, (error, res) => {
+        cnn.query(qry, (error, result) => {
+            let resp = null
             if(error){
                 console.log(error)
-                return callback({mensaje: 'Ocurrió un error al consultar los permisos: '+error.message, tipoMensaje: 'danger', id: -1});
+                resp = callback({mensaje: 'Ocurrió un error al consultar los permisos: '+error.message, tipoMensaje: 'danger', id: -1});
             }else{
-                return callback(null, res);
+                resp = callback(null, result);
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 permisosModel.savePermissions = async (id, data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
+        let resp = null
         try{
             await cnn.promise().beginTransaction();
             await deletePermissions(cnn, id, data);
             await insertPermissions(cnn, id, data);
             await updatePermissions(cnn, id, data);
             await cnn.promise().commit();
-            cnn.release()
 
-            return callback({mensaje: 'Los permisos han sido actualizados.', tipoMensaje: 'success', id: -1});
+            resp = callback({mensaje: 'Los permisos han sido actualizados.', tipoMensaje: 'success', id: -1});
         }catch(error){
             await cnn.promise().rollback();
 
-            cnn.release()
-
-            return callback({mensaje: 'Ocurrió un error al intentar registrar los permisos: '+error.message, tipoMensaje: 'danger', id: -1});
+            resp = callback({mensaje: 'Ocurrió un error al intentar registrar los permisos: '+error.message, tipoMensaje: 'danger', id: -1});
         }
+        cnn.release()
+        return resp
     
     })
 }

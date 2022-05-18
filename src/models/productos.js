@@ -11,13 +11,11 @@ ProductosModel.getPage = (pag, callback) => {
 
 
 ProductosModel.getItemsPerPage = (pag, items, callback) => {
-    console.log('getItemsPerPage',pag, items)
     return getProductos(pag, items, null, null, callback)
 }
 
 
 ProductosModel.getItemsPerPageOrderBy = (pag, items, orderByField, orderByDirection, callback) => {
-    console.log('getItemsPerPageOrderBy',pag, items, orderByField, orderByDirection)
     return getProductos(pag, items, orderByField, orderByDirection, callback)
 }
 
@@ -25,8 +23,7 @@ ProductosModel.getItemsPerPageOrderBy = (pag, items, orderByField, orderByDirect
 const getProductos = (pag, items, orderByField, orderByDirection, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let desde = constantes.regPerPage * pag
@@ -63,20 +60,23 @@ const getProductos = (pag, items, orderByField, orderByDirection, callback) => {
                     ${orderByField && orderByDirection ? ' ORDER BY ' + orderByField + ' ' + orderByDirection : ''} 
                      LIMIT ${desde}, ${items}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de productos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de productos: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows FROM ${fromClause} WHERE p.deleted_at IS NULL`)
-                return callback(null, {data: res, rowsPerPage: items, totRows: totRows[0][0].totRows, page: pag})
+                resp = callback(null, {data: result, rowsPerPage: items, totRows: totRows[0][0].totRows, page: pag})
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -85,24 +85,27 @@ ProductosModel.getMinMaxPrice = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let qry = `SELECT MIN(precio_venta_normal) min, MAX(precio_venta_normal) max FROM productos WHERE deleted_at IS NULL`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener los precios mínimos y máximos de los productos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener los precios mínimos y máximos de los productos: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -112,7 +115,7 @@ ProductosModel.filter = (texto, pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let desde = constantes.regPerPage * pag
@@ -162,21 +165,24 @@ ProductosModel.filter = (texto, pag, callback) => {
                     p.deleted_at IS NULL AND 
                     ${filtro} 
                     LIMIT ${desde}, ${constantes.regPerPage}`
-
-        cnn.query(qry, async (err, res) =>{
+        
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar el listado de productos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar el listado de productos: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows FROM ${fromClause} WHERE p.deleted_at IS NULL AND ${filtro}`)
-                return callback(null, {data: res, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].totRows, page: pag})
+                resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].totRows, page: pag})
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -185,7 +191,7 @@ ProductosModel.filterParams = (data, pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let marcas = data.marcas
@@ -253,20 +259,23 @@ ProductosModel.filterParams = (data, pag, callback) => {
                     ${orderBy && order ? ' ORDER BY ' + orderBy + ' ' + order : '' }
                 LIMIT ${desde}, ${itemsPorPag}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar el listado de productos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar el listado de productos: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(p.id) as totRows FROM ${fromClause} WHERE p.deleted_at IS NULL ${filtro}`)
-                return callback(null, {data: res, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].totRows, page: pag})
+                resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, totRows: totRows[0][0].totRows, page: pag})
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -275,7 +284,7 @@ ProductosModel.getAll = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let qry = `
@@ -308,19 +317,22 @@ ProductosModel.getAll = (callback) => {
                 WHERE
                     p.deleted_at IS NULL`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de todos los productos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de todos los productos: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -328,7 +340,7 @@ ProductosModel.find = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let qry = `
@@ -410,27 +422,48 @@ ProductosModel.find = (id, callback) => {
                             WHERE 
                                 deleted_at IS NULL AND 
                                 producto_id = ${cnn.escape(id)}`
-        cnn.query(qry, async (err, res) =>{
+
+        let qryTallas = `
+                SELECT 
+                    tp.id, 
+                    tp.talla_id, 
+                    t.talla 
+                FROM 
+                    tallas_productos tp 
+                    INNER JOIN tallas t ON tp.talla_id = t.id 
+                WHERE 
+                    tp.deleted_at IS NULL AND 
+                    tp.producto_id = ${cnn.escape(id)} 
+                    `
+        
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el producto: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar el producto: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res[0]){
+                if(result[0]){
                     let impuestos = await cnn.promise().query(qryImpuestos)
-                    res[0].impuestos = impuestos[0]
-                    res[0].impuestos_id = impuestos[0].map(i => i.id)
+                    result[0].impuestos = impuestos[0]
+                    result[0].impuestos_id = impuestos[0].map(i => i.id)
 
                     let imagenes = await cnn.promise().query(qryImagenes)
-                    res[0].imagenes = imagenes[0]
-                }
-                return callback(null, res[0])
-            }
-        })
-    
-        cnn.release()
+                    result[0].imagenes = imagenes[0]
 
+                    let tallas = await cnn.promise().query(qryTallas)
+                    result[0].tallas_id = tallas[0].map(e => e.talla_id )
+                    result[0].tallas = tallas[0]
+                }
+                resp = callback(null, result[0])
+            }
+            cnn.release()
+            return resp
+        })
+
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -439,10 +472,10 @@ ProductosModel.insert = async (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
-        let { impuestos_id, imagenes } = data
+        let { impuestos_id, imagenes, tallas_id } = data
 
         let qryProductos = `
                 INSERT INTO productos (
@@ -469,36 +502,80 @@ ProductosModel.insert = async (data, callback) => {
                     CURDATE()
                 )`
         
-        
-        cnn.query(qryProductos, async (err, res) => {
-            if(err){
-                return callback({mensaje: 'Ocurrió un error al ingresar el producto: '+err.message, tipoMensaje: 'danger'})
-            }else{
-                if(res.affectedRows > 0){
-                    if(impuestos_id?.length > 0){
-                        if(!await ingresarImpuestos(cnn, res.insertId, impuestos_id)){
-                            throw 'Error al registrar los impuestos del productos.'
-                        }
-                    }
-                    if(imagenes?.length > 0){
-                        if(!await ingresarFotos(cnn, res.insertId, imagenes)){
-                            throw 'Error al registrar las fotos del productos.'
-                        }
-                    }
-                    return callback(null, {mensaje: 'El producto ha sido ingresado,', tipoMensaje:'success', id: res.insertId})
-                }else{
-                    return callback({mensaje: 'No fue posible ingresar el producto.', tipoMensaje: 'danger', id: -1})
-                }
+        let res = null 
+        try{
+            await cnn.promise().beginTransaction()
+
+            let result = await cnn.promise().query(qryProductos)
+
+            if(result[0].affectedRows === 0){
+                throw {message: 'No fue posible ingresar el producto.'}
             }
-        })
-        
+            
+            if(!await ingresarImpuestos(cnn, result[0].insertId, impuestos_id)){
+                throw {message: 'Error al intentar registrar los impuestos'}
+            }
 
-    
+            if(!await ingresarFotos(cnn, result[0].insertId, imagenes)){
+                throw {message: 'Error al intentar registrar las fotos'}
+            }
+
+            if(!await ingresarTallas(cnn, result[0].insertId, tallas_id)){
+                throw {message: 'Error al intentar registrar las tallas'}
+            }
+
+            await cnn.promise().commit()
+
+            res = callback(null, {mensaje: 'El producto ha sido ingresado.', tipoMensaje: 'success', id: result.insertId})
+            /*
+            cnn.query(qryProductos, async (err, result) => {
+                let resp = null
+                if(err){
+                    resp = callback({mensaje: 'Ocurrió un error al ingresar el producto: '+err.message, tipoMensaje: 'danger'})
+                }else{
+                    if(result.affectedRows > 0){
+
+                        //Grabando los impuestos
+                        if(impuestos_id?.length > 0){
+                            if(!await ingresarImpuestos(cnn, result.insertId, impuestos_id)){
+                                throw 'Error al registrar los impuestos del producto.'
+                            }
+                        }
+
+                        //Grabando las tallas
+                        if(tallas_id?.length > 0){
+                            if(!await ingresarTallas(cnn, result.insertId, tallas_id)){
+                                throw 'Error al registrar las tallas del producto.'
+                            }
+                        }
+
+                        //Grabando las imágenes
+                        if(imagenes?.length > 0){
+                            if(!await ingresarFotos(cnn, result.insertId, imagenes)){
+                                throw 'Error al registrar las fotos del productos.'
+                            }
+                        }
+                        resp = callback(null, {mensaje: 'El producto ha sido ingresado,', tipoMensaje:'success', id: result.insertId})
+                    }else{
+                        resp = callback({mensaje: 'No fue posible ingresar el producto.', tipoMensaje: 'danger', id: -1})
+                    }
+                }
+                cnn.release()
+                return resp
+            })
+            */
+        }catch(error){
+            cnn.promise().rollback()
+
+            res = callback({mensaje: 'Ocurrio un error al intentar ingresar el producto: ' + error.message, tipoMensaje: 'danger', id: -1})
+        }
         cnn.release()
-
+        return res
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -535,7 +612,7 @@ const ingresarImpuestos = (cnn, idProducto, arrImpuestos) => {
             await cnn.promise().query(qryImpuestosInsert)
             await cnn.promise().query(qryImpuestosUndelete)
             return resolve(true)
-        }catch(err){s
+        }catch(err){
             console.log(err)
             return reject(false)
         }
@@ -608,18 +685,48 @@ const ingresarFotos = async (cnn, idProducto, arrFotos) => {
 }
 
 
+const ingresarTallas = async (cnn, idProducto, arrTallas) => {
+    let res = true
+    try{
+        await cnn.promise().query(`DELETE FROM tallas_productos WHERE producto_id = ${cnn.escape(idProducto)} AND talla_id NOT IN (${arrTallas})`)
+
+        let qry = `INSERT INTO tallas_productos (
+                    producto_id, 
+                    talla_id, 
+                    created_at,
+                    updated_at 
+                ) 
+                SELECT 
+                    ${cnn.escape(idProducto)}, 
+                    id,
+                    CURDATE(),
+                    CURDATE() 
+                FROM tallas 
+                WHERE id IN (${cnn.escape(arrTallas.split(','))})
+                `
+
+                let result = await cnn.promise().query(qry)
+                if(result.affectedRows === 0){
+                    return false
+                }
+        
+    }catch(error){
+        console.log(error)
+        res = false
+    }
+    return res
+}
+
 
 ProductosModel.update = (id, data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
+        
 
-        let { impuestos_id, imagenes } = data
-        //console.log('imagenes',imagenes, imagenes.length, 
-        //imagenes[0], imagenes[1], imagenes[2],
-        //'0-1',imagenes[0].substr(0,1), '1-1',imagenes[0].substr(1,1), '2-1',imagenes[0].substr(2,1))
+        let { impuestos_id, imagenes, tallas_id } = data
         
         let qryProductos = `
                 UPDATE productos SET 
@@ -636,11 +743,40 @@ ProductosModel.update = (id, data, callback) => {
                 WHERE 
                     id = ${cnn.escape(id)}`
         
-        cnn.query(qryProductos, async (err, res) => {
+        let res = null
+        try{
+
+            cnn.promise().beginTransaction()
+
+            let result = await cnn.promise().query(qryProductos)
+
+            if(result.affectedRows === 0){
+                throw {message: 'No fue posible actualizar el producto.'}
+            }
+
+            if(!await ingresarImpuestos(cnn, id, impuestos_id)){
+                throw {message: 'Error al actualizar los impuestos'}
+            }
+
+            if(!await ingresarFotos(cnn, id, imagenes)){
+                throw {message: 'Error al actualizar las imagenes'}
+            }
+
+            if(!await ingresarTallas(cnn, id, tallas_id)){
+                throw {message: 'Error al actualizar las tallas'}
+            }
+
+            await cnn.promise().commit()
+
+            res = callback(null, {mensaje: 'El producto ha sido actualizado', tipoMensaje: 'success', id})
+        
+        /*
+        cnn.query(qryProductos, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al ingresar el producto: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al ingresar el producto: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
+                if(result.affectedRows > 0){
                     if(impuestos_id?.length > 0){
                         if(!await ingresarImpuestos(cnn, id, impuestos_id)){
                             throw 'Error al actualizar los impuestos del productos.'
@@ -651,18 +787,29 @@ ProductosModel.update = (id, data, callback) => {
                             throw 'Error al actualizar las fotos del productos.'
                         }
                     }
-                    return callback(null, {mensaje: 'El producto ha sido actualizado.', tipoMensaje:'success', id: res.insertId})
+                    resp = callback(null, {mensaje: 'El producto ha sido actualizado.', tipoMensaje:'success', id: result.insertId})
                 }else{
-                    return callback({mensaje: 'No fue posible actualizar el producto.', tipoMensaje: 'danger', id: -1})
+                    resp = callback({mensaje: 'No fue posible actualizar el producto.', tipoMensaje: 'danger', id: -1})
                 }
             }
+            cnn.release()
+            return resp
         })
+        */
+        }catch(error){
+            console.log('ERROR: ',error)
+            cnn.promise().rollback()
 
+            res = callback({mensaje: 'Ocurrio un error al intentar actualizar el producto: ' + error.message, tipoMensaje: 'danger', id})
+        }
         cnn.release()
 
+        return res
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -671,30 +818,33 @@ ProductosModel.softDelete = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
         let qryProductos = `UPDATE productos SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
-        cnn.query(qryProductos, async (err, res) => {
+        cnn.query(qryProductos, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar el producto: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar el producto: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
+                if(result.affectedRows > 0){
                     await cnn.promise().query(`UPDATE impuestos_productos SET deleted_at = CURDATE() WHERE producto_id = ${cnn.escape(id)}`)
                     await cnn.promise().query(`UPDATE imagenes_productos SET deleted_at = CURDATE() WHERE producto_id = ${cnn.escape(id)}`)
 
-                    return callback(null, {mensaje: 'El producto ha sido eliminado.', tipoMensaje:'success', id})
+                    resp = callback(null, {mensaje: 'El producto ha sido eliminado.', tipoMensaje:'success', id})
                 }else{
-                    return callback({mensaje: 'No fue posible eliminar el producto.', tipoMensaje: 'danger', id: -1})
+                    resp = callback({mensaje: 'No fue posible eliminar el producto.', tipoMensaje: 'danger', id: -1})
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -702,33 +852,36 @@ ProductosModel.delete = (id, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
             cnn.release();
-            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+            return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger', id:-1})
         } 
 
-        //Importante.: Las tablas imagenes_productos e impuestos_productos productos tienen configurada su propiedad ONDELETE 
+        //Importante.: Las tablas imagenes_productos, tallas_productos e impuestos_productos productos tienen configurada su propiedad ONDELETE 
         //para las FK, como en CASCADA (al borrar un producto se eliminan también sus imágenes y sus impuestos asociados)
         let qryProductos = `DELETE FROM productos WHERE id = ${cnn.escape(id)}` 
         
-        cnn.query(qryProductos, async (err, res) => {
+        cnn.query(qryProductos, async (err, result) => {
+            let resp = null
             if(err){
                 return callback({mensaje: 'Ocurrió un error al borrar el producto: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
+                if(result.affectedRows > 0){
                     //await cnn.promise().query(`DELETE FROM impuestos_productos WHERE producto_id = ${cnn.escape(id)}`)
                     //await cnn.promise().query(`DELETE FROM imagenes_productos WHERE producto_id = ${cnn.escape(id)}`)
 
-                    return callback(null, {mensaje: 'El producto ha sido borrar.', tipoMensaje:'success', id})
+                    resp = callback(null, {mensaje: 'El producto ha sido borrar.', tipoMensaje:'success', id})
                 }else{
-                    return callback({mensaje: 'No fue posible borrar el producto.', tipoMensaje: 'danger', id: -1})
+                    resp = callback({mensaje: 'No fue posible borrar el producto.', tipoMensaje: 'danger', id: -1})
                 }
             }
+            cnn.release()
+            return resp
         })
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

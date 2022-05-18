@@ -8,7 +8,6 @@ let UnidadesModel = {}
 UnidadesModel.getPage = (pag, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -27,20 +26,23 @@ UnidadesModel.getPage = (pag, callback) => {
                 deleted_at IS NULL
             LIMIT ${desde}, ${constantes.regPerPage}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de unidades: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de unidades: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query('SELECT COUNT(id) as totRows FROM unidades WHERE deleted_at IS NULL')
-                return callback(null, {data: res, rowsPerPage: constantes.regPerPage, rows: totRows[0][0].totRows, page: pag})
+                resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, rows: totRows[0][0].totRows, page: pag})
             }
+            cnn.release()
+            return resp
         })
-      
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
     
 }
@@ -75,20 +77,23 @@ UnidadesModel.filter = (texto, pag, callback) => {
                 ${filtro}
             LIMIT ${desde}, ${constantes.regPerPage}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar el listado de unidades: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al filtrar el listado de unidades: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(id) as totRows FROM unidades WHERE deleted_at IS NULL AND ${filtro}`)
-                return callback(null, {data: res, rowsPerPage: constantes.regPerPage, rows: totRows[0][0].totRows, page: pag})
+                resp = callback(null, {data: result, rowsPerPage: constantes.regPerPage, rows: totRows[0][0].totRows, page: pag})
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -111,19 +116,22 @@ UnidadesModel.getAll = (callback) => {
                     WHERE
                         deleted_at IS NULL`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener el listado de todas las unidades: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener el listado de todas las unidades: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -147,19 +155,22 @@ UnidadesModel.find = (id, callback) => {
                         deleted_at IS NULL AND 
                         id = ${cnn.escape(id)}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar la unidad: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar la unidad: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, result[0])
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -182,23 +193,26 @@ UnidadesModel.insert = (data, callback) => {
                         CURDATE()
                     )`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al ingresar la unidad: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al ingresar la unidad: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La unidad a sido ingresada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La unidad a sido ingresada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible ingresar la unidad: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible ingresar la unidad: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -216,23 +230,26 @@ UnidadesModel.update = (id, data, callback) => {
                     WHERE 
                         id = ${cnn.escape(id)}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al actualizar la unidad: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al actualizar la unidad: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La unidad a sido actualizada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La unidad a sido actualizada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible actualizar la unidad: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible actualizar la unidad: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -245,44 +262,59 @@ UnidadesModel.softDelete = (id, callback) => {
 
         let qry = `UPDATE unidades SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al eliminar la unidad: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al eliminar la unidad: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La unidad a sido eliminada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La unidad a sido eliminada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible eliminar la unidad: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible eliminar la unidad: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 UnidadesModel.delete = (id, callback) => {
-    if(cnn){
+    pool.getConnection(async (err, cnn) => {
+        if (err) {
+            cnn.release();
+            return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
+        } 
+
         let qry = `DELETE FROM unidades WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al borrar la unidad: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al borrar la unidad: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback(null, {mensaje: 'La unidad a sido borrada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback(null, {mensaje: 'La unidad a sido borrada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'No fue posible borrar la unidad: '+err.message, tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'No fue posible borrar la unidad: '+err.message, tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    }else{
-        return callback({mensaje: 'Conexión inactiva.', tipoMensaje: 'danger'})
-    }
+
+        /*
+        cnn.on('error', function(err) {      
+            return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
+        })
+        */
+    })
 }
 
 module.exports = UnidadesModel

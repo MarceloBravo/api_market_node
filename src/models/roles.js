@@ -24,7 +24,6 @@ const getTotRows = (cnn, qry) => {
 rolesModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -44,20 +43,23 @@ rolesModel.getPage = (pag, callback) => {
             LIMIT ${desde}, ${rowsPerPage}
         `;
 
-        cnn.query(qry, async (err, res) => {
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar los registros: '+err.message, tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al solicitar los registros: '+err.message, tipoMensaje: 'danger', id:-1});
             }else{
                 let totRows = await getTotRows(cnn, 'SELECT COUNT(*) AS totReg FROM roles WHERE deleted_at IS NULL');
-                return callback(null, {data:res, page: pag, totRows, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, totRows, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         });
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 
 }
@@ -66,7 +68,6 @@ rolesModel.getPage = (pag, callback) => {
 rolesModel.get = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -85,20 +86,22 @@ rolesModel.get = (id, callback) => {
                 AND id = ${cnn.escape(id)}
         `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar el registro: '+err.message, tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al buscar el registro: '+err.message, tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, res[0]);
+                resp = callback(null, result[0]);
             }
+            cnn.release()
+            return resp
         });
 
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-
+        */
     })
 }
 
@@ -106,7 +109,6 @@ rolesModel.get = (id, callback) => {
 rolesModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -124,20 +126,22 @@ rolesModel.getAll = (callback) => {
                 deleted_at IS NULL
         `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al solicitar el listado de registros: '+err.message, tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al solicitar el listado de registros: '+err.message, tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, res);
+                resp = callback(null, result);
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-
+        */
     })
 }
 
@@ -145,7 +149,6 @@ rolesModel.getAll = (callback) => {
 rolesModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -153,8 +156,10 @@ rolesModel.filter = (texto, pag, callback) => {
                     (
                         name LIKE ${cnn.escape('%' + texto+ '%')}
                         OR description LIKE ${cnn.escape('%' + texto + '%')}
-                        OR DATE_FORMAT(created_at, "%d/%M/%Y") LIKE ${cnn.escape('%' + texto + '%')}
-                        OR DATE_FORMAT(updated_at, "%d/%M/%Y") LIKE ${cnn.escape('%' + texto + '%')}
+                        OR DATE_FORMAT(created_at, "%d/%m/%Y") LIKE ${cnn.escape('%' + texto + '%')}
+                        OR DATE_FORMAT(updated_at, "%d/%m/%Y") LIKE ${cnn.escape('%' + texto + '%')} 
+                        OR DATE_FORMAT(created_at, "%d-%m-%Y") LIKE ${cnn.escape('%' + texto + '%')}
+                        OR DATE_FORMAT(updated_at, "%d-%m-%Y") LIKE ${cnn.escape('%' + texto + '%')}
                     )`;
                     
         let desde = rowsPerPage  * pag;
@@ -174,21 +179,25 @@ rolesModel.filter = (texto, pag, callback) => {
             LIMIT ${desde}, ${rowsPerPage}
         `;
 
-        cnn.query(qry, async (err, res) => {
+        console.log(qry, pag)
+
+        cnn.query(qry, async (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al filtrar los registros: '+err.message, tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al filtrar los registros: '+err.message, tipoMensaje: 'danger', id:-1});
             }else{
                 let totRows = await getTotRows(cnn, `SELECT COUNT(*) AS totReg FROM roles WHERE deleted_at IS NULL ${filtro}`);
-                return callback(null, {data:res, page: pag, totRows, rowsPerPage: constantes.regPerPage});
+                resp = callback(null, {data: result, page: pag, totRows, rowsPerPage: constantes.regPerPage});
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-
+        */
     })
 }
 
@@ -196,7 +205,6 @@ rolesModel.filter = (texto, pag, callback) => {
 rolesModel.insert = (data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -214,20 +222,22 @@ rolesModel.insert = (data, callback) => {
             )
             `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar ingresar el registro.', tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar ingresar el registro.', tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, {mensaje: 'El registro ha sido ingresado exitosamente.', tipoMensaje: 'success', id: res.newId})
+                resp = callback(null, {mensaje: 'El registro ha sido ingresado exitosamente.', tipoMensaje: 'success', id: result.newId})
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-        
+        */
     })
 }
 
@@ -235,7 +245,6 @@ rolesModel.insert = (data, callback) => {
 rolesModel.update = (id, data, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -247,20 +256,22 @@ rolesModel.update = (id, data, callback) => {
             WHERE id = ${cnn.escape(id)}
             `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar el registro.', tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar el registro.', tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, {mensaje: 'El registro ha sido actualizado exitosamente.', tipoMensaje: 'success', id: res.newId})
+                resp = callback(null, {mensaje: 'El registro ha sido actualizado exitosamente.', tipoMensaje: 'success', id: result.newId})
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-        
+        */
     })
 }
 
@@ -268,7 +279,6 @@ rolesModel.update = (id, data, callback) => {
 rolesModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -278,20 +288,22 @@ rolesModel.softDelete = (id, callback) => {
             WHERE id = ${cnn.escape(id)}
             `;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id: res.newId})
+                resp = callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id: result.newId})
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-        
+        */
     })    
 }
 
@@ -299,26 +311,27 @@ rolesModel.softDelete = (id, callback) => {
 rolesModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM roles WHERE id = ${cnn.escape(id)}`;
 
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
+                resp = callback({mensaje: 'Ocurrió un error al intentar eliminar el registro.', tipoMensaje: 'danger', id:-1});
             }else{
-                return callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id: res.newId})
+                resp = callback(null, {mensaje: 'El registro ha sido eliminado exitosamente.', tipoMensaje: 'success', id: result.newId})
             }
+            cnn.release()
+            return resp
         });
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id})
         })
-        
+        */
     })  
 }
 

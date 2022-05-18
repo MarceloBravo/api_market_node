@@ -9,7 +9,6 @@ let tiendaModel = {}
 tiendaModel.getData = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -24,19 +23,22 @@ tiendaModel.getData = (callback) => {
             LIMIT 1
         ` 
 
-        cnn.query(qry, (err, res)=>{
+        cnn.query(qry, (err, result)=>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al buscar los datos de la tienda: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al buscar los datos de la tienda: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(res[0])
+                resp = callback(result[0])
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -44,7 +46,6 @@ tiendaModel.getData = (callback) => {
 tiendaModel.save = async (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -76,21 +77,21 @@ tiendaModel.save = async (data, callback) => {
                 id = (SELECT id FROM (SELECT id FROM tienda LIMIT 1) as t)
         `
 
-        console.log(qry, data)
-
-        cnn.query(qry, (err, res) => {
+        cnn.query(qry, (err, result) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al intentar actualizar los datos de la tienda: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al intentar actualizar los datos de la tienda: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null,{mensaje: 'Los datos de la tienda han sido actualizados', tipoMensaje: 'success'})
+                resp = callback(null,{mensaje: 'Los datos de la tienda han sido actualizados', tipoMensaje: 'success'})
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
-
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

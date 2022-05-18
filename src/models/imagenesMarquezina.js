@@ -8,7 +8,6 @@ let ImagenesMarquezinaModel = {}
 ImagenesMarquezinaModel.getData = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -27,19 +26,22 @@ ImagenesMarquezinaModel.getData = (callback) => {
                 deleted_at IS NULL
             ORDER BY posicion ASC`
         
-        cnn.query(qry, (err, res)=>{
+        cnn.query(qry, (err, result)=>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener las imágenes de la marquezina: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener las imágenes de la marquezina: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, result)
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -47,29 +49,30 @@ ImagenesMarquezinaModel.getData = (callback) => {
 ImagenesMarquezinaModel.save = async (data, callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         }
-        
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
 
+        let resp = null
         try{
             await cnn.promise().beginTransaction();
             await eliminar(cnn, data.imagenes)
             await actualizar(cnn, data.imagenes)
             await insertarNuevos(cnn, data.imagenes)
             await cnn.promise().commit()
-
-            cnn.release()
-            return callback(null, {mensaje: 'Las imágenes han sido grabadas.', tipoMensaje: 'success'})
+            
+            resp = callback(null, {mensaje: 'Las imágenes han sido grabadas.', tipoMensaje: 'success'})
         }catch(err){
             await cnn.promise().rollback()
-
-            cnn.release()
-            return callback(null, {mensaje: 'Ocurrió un error al intentar grabar las imágenes: '+err.message, tipoMensaje: 'danger'})
+            resp = callback(null, {mensaje: 'Ocurrió un error al intentar grabar las imágenes: '+err.message, tipoMensaje: 'danger'})
         }
+
+        cnn.release()
+        return resp
     })
 }
 

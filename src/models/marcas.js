@@ -8,7 +8,6 @@ let MarcasModel = {}
 MarcasModel.getPage = (pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -26,27 +25,28 @@ MarcasModel.getPage = (pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}`
 
         cnn.query(qry, async (err, res) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al solicitar los datos: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al solicitar los datos: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(id) as totRows FROM marcas WHERE deleted_at IS NULL`)
-                return callback(null,{data: res, totRows: totRows[0][0].totRows, regPerPage: constantes.regPerPage, pag: pag})
+                resp = callback(null,{data: res, totRows: totRows[0][0].totRows, regPerPage: constantes.regPerPage, pag: pag})
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
-
+        */
     })
 }
 
 MarcasModel.filter = (texto, pag, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -70,27 +70,29 @@ MarcasModel.filter = (texto, pag, callback) => {
                     LIMIT ${desde}, ${constantes.regPerPage}`
 
 
-        cnn.query(qry, async (err, res) =>{
+        cnn.query(qry, async (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al filtrar los registros: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al filtrar los registros: '+err.message, tipoMensaje: 'danger'})
             }else{
                 let totRows = await cnn.promise().query(`SELECT COUNT(id) as totRows FROM marcas WHERE deleted_at IS NULL AND ${filtro}`)
-                return callback(null,{data: res, totRows: totRows[0][0].totRows, regPerPage: constantes.regPerPage, pag: pag})
+                resp = callback(null,{data: result, totRows: totRows[0][0].totRows, regPerPage: constantes.regPerPage, pag: pag})
             }
+            cnn.release()
+            return resp
         })
-        
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 MarcasModel.getAll = (callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -106,25 +108,27 @@ MarcasModel.getAll = (callback) => {
                     deleted_at IS NULL`
 
         cnn.query(qry, (err, res) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al solicitar todas las marcas: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al solicitar todas las marcas: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, res)
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 MarcasModel.find = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -141,18 +145,21 @@ MarcasModel.find = (id, callback) => {
                         id = ${cnn.escape(id)}`
 
         cnn.query(qry, (err, res) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al buscar el registro: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al buscar el registro: '+err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, res[0])
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -163,7 +170,6 @@ MarcasModel.insert = (data, callback) => {
     }
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -178,22 +184,25 @@ MarcasModel.insert = (data, callback) => {
                     )`
 
         cnn.query(qry, (err, res) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al ingresar el registro: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al ingresar el registro: '+err.message, tipoMensaje: 'danger'})
             }else{
                 if(res.affectedRows > 0){
-                    return callback({mensaje: 'La marca ha sido ingresada.', tipoMensaje: 'success'})
+                    resp = callback({mensaje: 'La marca ha sido ingresada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'La marca noi pudo ser ingresada.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'La marca noi pudo ser ingresada.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
@@ -204,7 +213,6 @@ MarcasModel.update = (id, data, callback) => {
     }
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -215,81 +223,87 @@ MarcasModel.update = (id, data, callback) => {
                         id = ${cnn.escape(id)}`
 
 
-        cnn.query(qry, (err, res) =>{
+        cnn.query(qry, (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al actualizar el registro: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al actualizar el registro: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback({mensaje: 'La marca ha sido actualizada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback({mensaje: 'La marca ha sido actualizada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'La marca no pudo ser actualizada.' , tipoMensaje: 'danger'})
+                    resp = callback({mensaje: 'La marca no pudo ser actualizada.' , tipoMensaje: 'danger'})
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 MarcasModel.softDelete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `UPDATE marcas SET deleted_at = CURDATE() WHERE id = ${cnn.escape(id)}`
-        cnn.query(qry, (err, res) =>{
+        cnn.query(qry, (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al eliminar el registro: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al eliminar el registro: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback({mensaje: 'La marca ha sido eliminada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback({mensaje: 'La marca ha sido eliminada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'La marca no pudo ser eliminada.' , tipoMensaje: 'danger'})    
+                    resp = callback({mensaje: 'La marca no pudo ser eliminada.' , tipoMensaje: 'danger'})    
                 }
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 MarcasModel.delete = (id, callback) => {
     pool.getConnection((err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
         let qry = `DELETE FROM marcas WHERE id = ${cnn.escape(id)}`
 
-        cnn.query(qry, (err, res) =>{
+        cnn.query(qry, (err, result) =>{
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrio un error al eliminar la marca: '+err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrio un error al eliminar la marca: '+err.message, tipoMensaje: 'danger'})
             }else{
-                if(res.affectedRows > 0){
-                    return callback({mensaje: 'La marca ha sido eliminada.', tipoMensaje: 'success'})
+                if(result.affectedRows > 0){
+                    resp = callback({mensaje: 'La marca ha sido eliminada.', tipoMensaje: 'success'})
                 }else{
-                    return callback({mensaje: 'La marca no pudo ser eliminada.', tipoMensaje: 'danger'})    
+                    resp = callback({mensaje: 'La marca no pudo ser eliminada.', tipoMensaje: 'danger'})    
                 }
-                
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 

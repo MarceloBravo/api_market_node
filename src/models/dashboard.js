@@ -8,7 +8,6 @@ let DashboardModel = {}
 DashboardModel.totalVentasMes = (callback)  => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -24,18 +23,21 @@ DashboardModel.totalVentasMes = (callback)  => {
                     GROUP BY DATE(fecha_venta_tienda)`
 
         cnn.query(qry, (err, data) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener las ventas del mes: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener las ventas del mes: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, data)
+                resp = callback(null, data)
             }
+            cnn.release()
+            return resp
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
@@ -43,7 +45,6 @@ DashboardModel.totalVentasMes = (callback)  => {
 DashboardModel.totalVentasTrimestre = (callback)  => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -64,25 +65,27 @@ DashboardModel.totalVentasTrimestre = (callback)  => {
                     `
 
         cnn.query(qry, (err, data) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener las ventas del semestre: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener las ventas del semestre: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, data)
+                resp = callback(null, data)
             }
+            cnn.release()
+            return resp;
         })
-      
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
 DashboardModel.totalVentasAnio = (callback)  => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -98,25 +101,27 @@ DashboardModel.totalVentasAnio = (callback)  => {
                 GROUP BY MONTH(fecha_venta_tienda)`
 
         cnn.query(qry, (err, data) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener las ventas del año: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener las ventas del año: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, data)
+                resp = callback(null, data)
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
 DashboardModel.masVendidos = (callback)  => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -133,18 +138,21 @@ DashboardModel.masVendidos = (callback)  => {
                     `
 
         cnn.query(qry, (err, data) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener los productos más vendidos: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener los productos más vendidos: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, data)
+                resp = callback(null, data)
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
@@ -152,7 +160,6 @@ DashboardModel.masVendidos = (callback)  => {
 DashboardModel.menosVendidos = (callback)  => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -169,25 +176,27 @@ DashboardModel.menosVendidos = (callback)  => {
                     `
 
         cnn.query(qry, (err, data) => {
+            let resp = null
             if(err){
-                return callback({mensaje: 'Ocurrió un error al obtener los meenos vendidos: ' + err.message, tipoMensaje: 'danger'})
+                resp = callback({mensaje: 'Ocurrió un error al obtener los meenos vendidos: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, data)
+                resp = callback(null, data)
             }
+            cnn.release()
+            return resp;
         })
-    
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 } 
 
 DashboardModel.totalPedidosDespachos = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -204,24 +213,27 @@ DashboardModel.totalPedidosDespachos = (callback) => {
                     fecha_venta_tienda BETWEEN DATE_ADD(CURDATE(),INTERVAL -6 MONTH) AND CURDATE()   `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return ({mensaje: 'Ocurrió un error al obtetener los pedidos y las ventas: ' + err.message, tipoMensaje: 'danger'})
+                resp = ({mensaje: 'Ocurrió un error al obtetener los pedidos y las ventas: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res[0])
+                resp = callback(null, res[0])
             }
+            cnn.release()
+            return resp;
         })
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
 DashboardModel.ventasDespachosUltimoAnio = (callback) => {
     pool.getConnection(async (err, cnn) => {
         if (err) {
-            cnn.release();
             return callback({mensaje: 'Conexión inactiva.', tipoMensage: 'danger', id:-1})
         } 
 
@@ -244,18 +256,21 @@ DashboardModel.ventasDespachosUltimoAnio = (callback) => {
                 ORDER BY fecha_venta_tienda ASC `
 
         cnn.query(qry, (err, res) => {
+            let resp = null
             if(err){
-                return ({mensaje: 'Ocurrió un error al obtetener los pedidos y las ventas: ' + err.message, tipoMensaje: 'danger'})
+                resp = ({mensaje: 'Ocurrió un error al obtetener los pedidos y las ventas: ' + err.message, tipoMensaje: 'danger'})
             }else{
-                return callback(null, res)
+                resp = callback(null, res)
             }
+            cnn.release()
+            return resp;
         })
-      
-        cnn.release()
 
+        /*
         cnn.on('error', function(err) {      
             return callback({mensaje: 'Ocurrió un error en la conexión.'+err.message, tipoMensage: 'danger', id:-1})
         })
+        */
     })
 }
 
